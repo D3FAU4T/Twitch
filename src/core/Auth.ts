@@ -1,6 +1,6 @@
 import type { clientCredentialGrantFlowError, ClientCredentialsGrantFlow } from "../types/Auth";
 
-export const clientCredentialGrantFlow = async (clientId: string, clientSecret: string) => {
+const clientCredentialGrantFlow = async (clientId: string, clientSecret: string) => {
     const token = await fetch('https://id.twitch.tv/oauth2/token', {
         method: 'POST',
         body: new URLSearchParams({
@@ -13,6 +13,4 @@ export const clientCredentialGrantFlow = async (clientId: string, clientSecret: 
     return await token.json() as ClientCredentialsGrantFlow | clientCredentialGrantFlowError;
 }
 
-export default {
-    clientCredentialGrantFlow
-}
+export default { clientCredentialGrantFlow };
