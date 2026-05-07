@@ -37,7 +37,7 @@ const send = async (creds: Creds, params: Omit<SendMessageParams, "broadcaster_i
     return result;
 };
 
-type announceParams = {
+export type announceParams = {
     broadcaster_id: string;
     moderator_id: string;
     message: string;

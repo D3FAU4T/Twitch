@@ -1,4 +1,4 @@
-import ChatMessages from "../api/Chat";
+import Chat, { type announceParams } from "../api/Chat";
 import Conduits from "../api/Conduits";
 import EventSubSubscription from "../api/EventSubSubscription";
 import Shards from "../api/Shards";
@@ -106,7 +106,7 @@ export default class Client {
     }
 
     public async say(message: string): Promise<string> {
-        const result = await ChatMessages.send(this.creds, {
+        const result = await Chat.send(this.creds, {
             broadcaster_id: this.options.broadcasterUserId,
             sender_id: this.options.userId,
             message,
@@ -114,8 +114,17 @@ export default class Client {
         return result.message_id;
     }
 
+    public async announce(message: string, color: announceParams["color"] = "primary") {
+        await Chat.announce(this.creds, {
+            broadcaster_id: this.options.broadcasterUserId,
+            moderator_id: this.options.userId,
+            message,
+            color,
+        });
+    }
+
     public async reply(parentMessageId: string, message: string): Promise<string> {
-        const result = await ChatMessages.send(this.creds, {
+        const result = await Chat.send(this.creds, {
             broadcaster_id: this.options.broadcasterUserId,
             sender_id: this.options.userId,
             message,
