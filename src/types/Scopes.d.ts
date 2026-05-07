@@ -87,3 +87,9 @@ export const enum Generic {
     ClipsEdit = "clips:edit",
     EditorManageClips = "editor:manage:clips",
 }
+
+export type Scopes =
+    | `${Channel}`
+    | `${Moderator}`
+    | `${User}`
+    | `${Generic}`;
