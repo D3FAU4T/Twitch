@@ -7,7 +7,9 @@ type Shard = Pick<Subscription, "transport"> & {
 
 export interface ShardResponse {
     data: Shard[];
-    pagination: {};
+    pagination: {
+        cursor?: string;
+    };
 }
 
 export interface ShardUpdateResponse {

@@ -1,4 +1,4 @@
-import ChatMessages from "../api/ChatMessages";
+import ChatMessages from "../api/Chat";
 import Conduits from "../api/Conduits";
 import EventSubSubscription from "../api/EventSubSubscription";
 import Shards from "../api/Shards";

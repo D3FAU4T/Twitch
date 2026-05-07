@@ -48,7 +48,7 @@ const get = async (options: Creds) => {
         throw new Error(`Failed to get subscriptions: ${response.status} ${response.statusText}; Refer to https://dev.twitch.tv/docs/api/reference/#get-eventsub-subscriptions`);
     }
 
-    return await response.json() as EventSubSubscriptionResponse & { pagination: {} };
+    return await response.json() as EventSubSubscriptionResponse & { pagination: { cursor?: string } };
 }
 
 export default {
