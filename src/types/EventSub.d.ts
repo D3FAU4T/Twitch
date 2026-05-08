@@ -52,7 +52,7 @@ interface ChannelChatMessageReply {
     thread_user_name: string;
 }
 
-export interface ChannelChatMessageEvent {
+interface ChannelChatMessageEvent {
     broadcaster_user_id: string;
     broadcaster_user_login: string;
     broadcaster_user_name: string;
@@ -78,8 +78,19 @@ export interface ChannelChatMessageEvent {
     channel_points_animation_id: string | null;
 }
 
+interface ChannelFollowEvent {
+    user_id: string;
+    user_login: string;
+    user_name: string;
+    broadcaster_user_id: string;
+    broadcaster_user_login: string;
+    broadcaster_user_name: string;
+    followed_at: string;
+}
+
 interface EventSubEventMap {
     "channel.chat.message": ChannelChatMessageEvent;
+    "channel.follow": ChannelFollowEvent;
 }
 
 type EventSubEvent<T extends SubscriptionType> = T extends keyof EventSubEventMap
