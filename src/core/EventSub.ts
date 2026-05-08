@@ -34,10 +34,6 @@ export default class EventSub {
 
                 this.ws = new WebSocket(url);
 
-                this.ws.onopen = () => {
-                    console.log('WebSocket connection established');
-                }
-
                 this.ws.onmessage = (event) => {
                     this.handleMessage(event.data);
                 }
@@ -82,7 +78,6 @@ export default class EventSub {
                     const keepAliveTimeoutSeconds = data.payload.session.keepalive_timeout_seconds ?? 10;
                     this.resetKeepalive(keepAliveTimeoutSeconds);
 
-                    console.log(`✅ EventSub session established: ${this.sessionId}`);
                     this.reconnectAttempts = 0;
 
                     if (this.tempFn) {
