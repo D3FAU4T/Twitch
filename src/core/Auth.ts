@@ -24,6 +24,7 @@ const validate = async (accessToken: string) => {
     if (!response.ok) {
         console.error(`Failed to validate access token: ${response.status} ${response.statusText}`);
         console.error(await response.text());
+        return null;
     }
 
     return await response.json() as {
