@@ -13,7 +13,12 @@ interface Game {
     igdb_id: string | null;
 }
 
-const get = async (options: getOpts) => {
+type headerAuth = {
+    "Client-Id": string;
+    AuthWithoutBearer: string;
+}
+
+const get = async (options: getOpts, header: headerAuth) => {
     const params = new URLSearchParams();
 
     if (options.id) {
@@ -41,7 +46,9 @@ const get = async (options: getOpts) => {
         throw new RangeError("Too many query parameters; Twitch API allows a maximum of 100 per request");
     }
 
-    const response = await fetch(`${url}?${params.toString()}`);
+    const response = await fetch(`${url}?${params.toString()}`, {
+        headers: header
+    });
 
     if (!response.ok) {
         throw new Error(`Failed to fetch games: ${response.status} ${response.statusText}`);
@@ -58,7 +65,7 @@ type getTopOpts = {
     before?: string;
 }
 
-const getTop = async (options: getTopOpts) => {
+const getTop = async (options: getTopOpts, header: headerAuth) => {
     const params = new URLSearchParams();
 
     if (options.first) {
@@ -73,7 +80,9 @@ const getTop = async (options: getTopOpts) => {
         params.append("before", options.before);
     }
 
-    const response = await fetch(`${url}/top?${params.toString()}`);
+    const response = await fetch(`${url}/top?${params.toString()}`, {
+        headers: header
+    });
 
     if (!response.ok) {
         throw new Error(`Failed to fetch top games: ${response.status} ${response.statusText}`);

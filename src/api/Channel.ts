@@ -14,9 +14,16 @@ type Channel = {
     is_branded_content: boolean;
 }
 
-const get = async (broadcaster_id: string) => {
+type headerAuth = {
+    "Client-Id": string;
+    AuthWithoutBearer: string;
+}
+
+const get = async (broadcaster_id: string, header: headerAuth) => {
     const params = new URLSearchParams({ broadcaster_id });
-    const response = await fetch(`${url}?${params.toString()}`);
+    const response = await fetch(`${url}?${params.toString()}`, {
+        headers: header
+    });
 
     if (!response.ok) {
         throw new Error(`Failed to fetch channel information: ${response.status} ${response.statusText}`);
@@ -40,12 +47,13 @@ type PatchOpts = {
     is_branded_content: boolean;
 }
 
-const patch = async (broadcaster_id: string, options: Partial<PatchOpts>) => {
+const patch = async (broadcaster_id: string, options: Partial<PatchOpts>, header: headerAuth) => {
     const params = new URLSearchParams({ broadcaster_id });
 
     const response = await fetch(`${url}?${params.toString()}`, {
         method: "PATCH",
         headers: {
+            ...header,
             "Content-Type": "application/json"
         },
         body: JSON.stringify(options)
