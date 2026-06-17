@@ -16,7 +16,8 @@ type Channel = {
 
 type headerAuth = {
     "Client-Id": string;
-    AuthWithoutBearer: string;
+    Authorization: string;
+    'Content-Type'?: string;
 }
 
 const get = async (broadcaster_id: string, header: headerAuth) => {
@@ -47,15 +48,12 @@ type PatchOpts = {
     is_branded_content: boolean;
 }
 
-const patch = async (broadcaster_id: string, options: Partial<PatchOpts>, header: headerAuth) => {
+const patch = async (broadcaster_id: string, header: headerAuth, options: Partial<PatchOpts>) => {
     const params = new URLSearchParams({ broadcaster_id });
 
     const response = await fetch(`${url}?${params.toString()}`, {
         method: "PATCH",
-        headers: {
-            ...header,
-            "Content-Type": "application/json"
-        },
+        headers: header,
         body: JSON.stringify(options)
     });
 

@@ -1,7 +1,14 @@
-import type { clientCredentialGrantFlowError, ClientCredentialsGrantFlow } from "../types/Auth";
-import { type Scopes } from "../types/Scopes";
+import type { 
+    AuthorizationCodeGrantFlow,
+    clientCredentialGrantFlowError, 
+    ClientCredentialsGrantFlow,
+} from "../types/Auth";
 
-const clientCredentialGrantFlow = async (clientId: string, clientSecret: string) => {
+import type { Scopes } from "../types/Scopes";
+
+const clientCredentialGrantFlow = async (
+    { clientId, clientSecret }: {clientId: string; clientSecret: string }
+) => {
     const token = await fetch('https://id.twitch.tv/oauth2/token', {
         method: 'POST',
         body: new URLSearchParams({
@@ -14,10 +21,43 @@ const clientCredentialGrantFlow = async (clientId: string, clientSecret: string)
     return await token.json() as ClientCredentialsGrantFlow | clientCredentialGrantFlowError;
 }
 
+const authorizationCodeGrantFlow = async (
+    { clientId, clientSecret, code, redirectUri }: {clientId: string; clientSecret: string; code: string; redirectUri: string }
+) => {
+    const response = await fetch('https://id.twitch.tv/oauth2/token', {
+        method: 'POST',
+        body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            code: code,
+            grant_type: 'authorization_code',
+            redirect_uri: redirectUri
+        })
+    });
+
+    return await response.json() as AuthorizationCodeGrantFlow | clientCredentialGrantFlowError;
+}
+
+const refreshTokenFlow = async (
+    { clientId, clientSecret, refreshToken }: {clientId: string; clientSecret: string; refreshToken: string }
+) => {
+    const response = await fetch('https://id.twitch.tv/oauth2/token', {
+        method: 'POST',
+        body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            grant_type: 'refresh_token',
+            refresh_token: refreshToken
+        })
+    });
+
+    return await response.json() as AuthorizationCodeGrantFlow | clientCredentialGrantFlowError;
+}
+
 const validate = async (accessToken: string) => {
     const response = await fetch('https://id.twitch.tv/oauth2/validate', {
         headers: {
-            'Authorization': `Bearer ${accessToken}`
+            'Authorization': `OAuth ${accessToken}` 
         }
     });
 
@@ -31,6 +71,8 @@ const validate = async (accessToken: string) => {
         client_id: string;
         expires_in: number;
         scopes: Scopes[];
+        login?: string; 
+        user_id?: string;
     }
 }
 
@@ -53,4 +95,10 @@ const revoke = async (clientId: string, accessToken: string) => {
     }
 }
 
-export default { clientCredentialGrantFlow, validate, revoke };
+export default { 
+    clientCredentialGrantFlow, 
+    authorizationCodeGrantFlow, 
+    refreshTokenFlow, 
+    validate, 
+    revoke 
+};

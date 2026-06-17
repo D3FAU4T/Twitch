@@ -15,7 +15,8 @@ interface Game {
 
 type headerAuth = {
     "Client-Id": string;
-    AuthWithoutBearer: string;
+    "Authorization": string;
+    'Content-Type'?: string;
 }
 
 const get = async (options: getOpts, header: headerAuth) => {
