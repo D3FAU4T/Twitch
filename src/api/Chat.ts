@@ -1,4 +1,4 @@
-import type { Creds } from "../types/Generic";
+import type { Creds, Result } from "../types/Generic";
 
 interface SendMessageParams {
     broadcaster_id: string;
@@ -12,7 +12,7 @@ interface SendMessageResponse {
     is_sent: boolean;
 }
 
-const send = async (creds: Creds, params: Omit<SendMessageParams, "broadcaster_id" | "sender_id">  & { broadcaster_id: string; sender_id: string }): Promise<SendMessageResponse> => {
+const send = async (creds: Creds, params: Omit<SendMessageParams, "broadcaster_id" | "sender_id">  & { broadcaster_id: string; sender_id: string }): Promise<Result<SendMessageResponse>> => {
     const response = await fetch("https://api.twitch.tv/helix/chat/messages", {
         method: "POST",
         headers: {
@@ -25,7 +25,10 @@ const send = async (creds: Creds, params: Omit<SendMessageParams, "broadcaster_i
 
     if (!response.ok) {
         const error = await response.text();
-        throw new Error(`Failed to send chat message: ${response.status} ${response.statusText} - ${error}`);
+        return {
+            is_success: false,
+            error: `Failed to send chat message: ${response.status} ${response.statusText} - ${error}`
+        }
     }
 
     const data = await response.json() as { data: SendMessageResponse[] };
@@ -34,7 +37,7 @@ const send = async (creds: Creds, params: Omit<SendMessageParams, "broadcaster_i
     if (!result?.message_id)
         throw new Error("No message_id in response");
 
-    return result;
+    return { is_success: true, data: result };
 };
 
 export type announceParams = {
@@ -45,7 +48,7 @@ export type announceParams = {
     color?: "blue" | "green" | "orange" | "purple" | "primary";
 }
 
-const announce = async (creds: Creds, params: announceParams) => {
+const announce = async (creds: Creds, params: announceParams): Promise<Result<null>> => {
     const response = await fetch("https://api.twitch.tv/helix/chat/announcements", {
         method: "POST",
         headers: {
@@ -58,8 +61,13 @@ const announce = async (creds: Creds, params: announceParams) => {
 
     if (!response.ok) {
         const error = await response.text();
-        console.error(`Failed to send chat announcement: ${response.status} ${response.statusText} - ${error}`);
+        return {
+            is_success: false,
+            error: `Failed to send chat announcement: ${response.status} ${response.statusText} - ${error}`
+        };
     }
+
+    return { is_success: true, data: null };
 }
 
 

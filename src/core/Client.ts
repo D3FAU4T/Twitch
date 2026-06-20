@@ -2,7 +2,7 @@ import Chat, { type announceParams } from "../api/Chat";
 import Conduits from "../api/Conduits";
 import EventSubSubscription from "../api/EventSubSubscription";
 import Shards from "../api/Shards";
-import type { EventSubNotification } from "../types/EventSub";
+import type { EventSubNotification, EventSubSubscription as EventSubSubscriptionType } from "../types/EventSub";
 import type { Creds } from "../types/Generic";
 import type { Subscription } from "../types/Subscriptions";
 import EventSub from "./EventSub";
@@ -30,7 +30,7 @@ const CHAT_EVENT_TYPES = new Set<ChatEventType>([
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 type ManualSubscriptionInput = DistributiveOmit<Subscription, "transport">;
-type ExistingSubscription = Awaited<ReturnType<typeof EventSubSubscription.get>>["data"][number];
+type ExistingSubscription = EventSubSubscriptionType;
 
 export interface ClientOptions {
     clientId: string;
@@ -111,16 +111,23 @@ export default class Client {
             sender_id: this.options.userId,
             message,
         });
-        return result.message_id;
+
+        if (!result.is_success)
+            throw new Error(String(result.error));
+
+        return result.data.message_id;
     }
 
     public async announce(message: string, color: announceParams["color"] = "primary") {
-        await Chat.announce(this.creds, {
+        const result = await Chat.announce(this.creds, {
             broadcaster_id: this.options.broadcasterUserId,
             moderator_id: this.options.userId,
             message,
             color,
         });
+
+        if (!result.is_success)
+            throw new Error(String(result.error));
     }
 
     public async reply(parentMessageId: string, message: string): Promise<string> {
@@ -130,21 +137,33 @@ export default class Client {
             message,
             reply_parent_message_id: parentMessageId,
         });
-        return result.message_id;
+
+        if (!result.is_success)
+            throw new Error(String(result.error));
+
+        return result.data.message_id;
     }
 
     private async ensureConduit(): Promise<string> {
-        const conduits = await Conduits.get(this.creds);
+        const result = await Conduits.get(this.creds);
+        if (!result.is_success)
+            throw new Error(String(result.error));
+
+        const conduits = result.data;
         const existingConduit = conduits[0];
 
         if (existingConduit)
             return existingConduit.id;
 
-        const created = await Conduits.create({
+        const createdResult = await Conduits.create({
             ...this.creds,
             shard_count: this.options.shardCount ?? 1,
         });
 
+        if (!createdResult.is_success)
+            throw new Error(String(createdResult.error));
+
+        const created = createdResult.data;
         const createdConduit = created[0];
         if (!createdConduit)
             throw new Error("Failed to create conduit.");
@@ -153,10 +172,15 @@ export default class Client {
     }
 
     private async ensureShard(conduitId: string, sessionId: string): Promise<void> {
-        const shards = await Shards.get({
+        const shardsResult = await Shards.get({
             ...this.creds,
             conduit_id: conduitId,
         });
+
+        if (!shardsResult.is_success)
+            throw new Error(String(shardsResult.error));
+
+        const shards = shardsResult.data;
 
         const shard0 = shards.data.find((shard) => shard.id === "0");
         const hasCorrectTransport =
@@ -165,7 +189,7 @@ export default class Client {
         if (shard0?.status === "enabled" && hasCorrectTransport)
             return;
 
-        await Shards.update({
+        const updateResult = await Shards.update({
             ...this.creds,
             conduit_id: conduitId,
             shards: [
@@ -178,6 +202,9 @@ export default class Client {
                 },
             ],
         });
+
+        if (!updateResult.is_success)
+            throw new Error(String(updateResult.error));
     }
 
     private async ensureSubscriptions(conduitId: string): Promise<void> {
@@ -244,7 +271,11 @@ export default class Client {
     }
 
     private async fetchExistingSubscriptions(): Promise<ExistingSubscription[]> {
-        return (await EventSubSubscription.get(this.creds)).data;
+        const result = await EventSubSubscription.get(this.creds);
+        if (!result.is_success)
+            throw new Error(String(result.error));
+
+        return result.data.data;
     }
 
     private async ensureSubscription(
@@ -256,10 +287,13 @@ export default class Client {
         if (subscriptions.some((subscription) => this.isSameSubscriptionDefinition(subscription, subscriptionDefinition)))
             return;
 
-        const created = await EventSubSubscription.create(this.creds, subscriptionDefinition);
+        const createdResult = await EventSubSubscription.create(this.creds, subscriptionDefinition);
+
+        if (!createdResult.is_success)
+            throw new Error(String(createdResult.error));
 
         if (existingSubscriptions)
-            existingSubscriptions.push(...created.data);
+            existingSubscriptions.push(...createdResult.data.data);
     }
 
     private isChatEventType(event: Subscription["type"]): event is ChatEventType {

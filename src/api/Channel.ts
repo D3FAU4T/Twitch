@@ -1,3 +1,5 @@
+import type { Creds, Result } from "../types/Generic";
+
 const url = "https://api.twitch.tv/helix/channels";
 
 type Channel = {
@@ -14,25 +16,24 @@ type Channel = {
     is_branded_content: boolean;
 }
 
-type headerAuth = {
-    "Client-Id": string;
-    Authorization: string;
-    'Content-Type'?: string;
-}
-
-const get = async (broadcaster_id: string, header: headerAuth) => {
+const get = async (broadcaster_id: string, creds: Creds): Promise<Result<Channel[]>> => {
     const params = new URLSearchParams({ broadcaster_id });
     const response = await fetch(`${url}?${params.toString()}`, {
-        headers: header
+        headers: {
+            "Client-Id": creds.clientId,
+            "Authorization": `Bearer ${creds.accessToken}`
+        }
     });
 
-    if (!response.ok) {
-        throw new Error(`Failed to fetch channel information: ${response.status} ${response.statusText}`);
-    }
+    if (!response.ok)
+        return {
+            is_success: false,
+            error: `Failed to fetch channel information: ${response.status} ${response.statusText}`
+        };
 
     const data = await response.json() as { data: Channel[] };
 
-    return data.data;
+    return { is_success: true, data: data.data };
 }
 
 type PatchOpts = {
@@ -48,18 +49,27 @@ type PatchOpts = {
     is_branded_content: boolean;
 }
 
-const patch = async (broadcaster_id: string, header: headerAuth, options: Partial<PatchOpts>) => {
+const patch = async (broadcaster_id: string, creds: Creds, options: Partial<PatchOpts>): Promise<Result<Channel>> => {
     const params = new URLSearchParams({ broadcaster_id });
 
     const response = await fetch(`${url}?${params.toString()}`, {
         method: "PATCH",
-        headers: header,
+        headers: {
+            "Client-Id": creds.clientId,
+            "Authorization": `Bearer ${creds.accessToken}`,
+            "Content-Type": "application/json",
+        },
         body: JSON.stringify(options)
     });
 
-    if (!response.ok) {
-        throw new Error(`Failed to update channel information: ${response.status} ${response.statusText}`);
-    }
+    if (!response.ok)
+        return {
+            is_success: false,
+            error: `Failed to update channel information: ${response.status} ${response.statusText}`
+        };
+
+    const data = await response.json() as { data: Channel };
+    return { is_success: true, data: data.data };
 }
 
 export default {
