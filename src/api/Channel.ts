@@ -49,7 +49,7 @@ type PatchOpts = {
     is_branded_content: boolean;
 }
 
-const patch = async (broadcaster_id: string, creds: Creds, options: Partial<PatchOpts>): Promise<Result<Channel>> => {
+const patch = async (broadcaster_id: string, creds: Creds, options: Partial<PatchOpts>): Promise<Result<null>> => {
     const params = new URLSearchParams({ broadcaster_id });
 
     const response = await fetch(`${url}?${params.toString()}`, {
@@ -68,8 +68,7 @@ const patch = async (broadcaster_id: string, creds: Creds, options: Partial<Patc
             error: `Failed to update channel information: ${response.status} ${response.statusText}`
         };
 
-    const data = await response.json() as { data: Channel };
-    return { is_success: true, data: data.data };
+    return { is_success: true, data: null };
 }
 
 export default {
