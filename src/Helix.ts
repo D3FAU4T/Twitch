@@ -4,5 +4,6 @@ import EventSubSubscription from "./api/EventSubSubscription";
 import Shards from "./api/Shards";
 import Games from "./api/Games";
 import Channel from "./api/Channel";
+import Users from "./api/Users";
 
-export default { Chat, Conduits, EventSubSubscription, Shards, Games, Channel };
+export default { Chat, Conduits, EventSubSubscription, Shards, Games, Channel, Users };
