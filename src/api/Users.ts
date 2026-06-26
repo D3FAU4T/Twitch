@@ -21,7 +21,7 @@ type User = {
     created_at: string;
 }
 
-const get = async (opts: Partial<getOpts>, creds: Creds): Promise<Result<unknown>> => {
+const get = async (opts: Partial<getOpts>, creds: Creds): Promise<Result<User[]>> => {
     const params = new URLSearchParams();
 
     if (opts.ids) {
