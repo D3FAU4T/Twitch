@@ -88,9 +88,69 @@ interface ChannelFollowEvent {
     followed_at: string;
 }
 
+interface ChannelPointsCustomRewardRedemptionBase {
+    broadcaster_user_id: string;
+    broadcaster_user_login: string;
+    broadcaster_user_name: string;
+    id: string;
+    user_id: string;
+    user_login: string;
+    user_name: string;
+    user_input: string;
+    reward: {
+        id: string;
+        title: string;
+        cost: number;
+        prompt: string;
+    };
+    redeemed_at: string;
+}
+
+interface StreamOnlineEvent {
+    id: string;
+    broadcaster_user_id: string;
+    broadcaster_user_login: string;
+    broadcaster_user_name: string;
+    type: "live" | "rerun";
+    started_at: string;
+}
+
+interface ShoutoutReceiveEvent {
+    broadcaster_user_id: string;
+    broadcaster_user_name: string;
+    broadcaster_user_login: string;
+    from_broadcaster_user_id: string;
+    from_broadcaster_user_name: string;
+    from_broadcaster_user_login: string;
+    viewer_count: number;
+    started_at: string;
+}
+
+interface ShoutoutCreateEvent {
+    broadcaster_user_id: string;
+    broadcaster_user_name: string;
+    broadcaster_user_login: string;
+    moderator_user_id: string;
+    moderator_user_name: string;
+    moderator_user_login: string;
+    to_broadcaster_user_id: string;
+    to_broadcaster_user_name: string;
+    to_broadcaster_user_login: string;
+    started_at: string;
+    viewer_count: number;
+    cooldown_ends_at: string;
+    target_cooldown_ends_at: string;
+}
+
 interface EventSubEventMap {
     "channel.chat.message": ChannelChatMessageEvent;
     "channel.follow": ChannelFollowEvent;
+    "channel.channel_points_custom_reward_redemption.add": ChannelPointsCustomRewardRedemptionBase & { status: 'unfulfilled' | 'unknown' };
+    "channel.channel_points_custom_reward_redemption.update": ChannelPointsCustomRewardRedemptionBase & { status: 'fulfilled' | 'cancelled' };
+    "stream.online": StreamOnlineEvent;
+    "stream.offline": Omit<StreamOnlineEvent, "type" | "started_at" | "id">;
+    "channel.shoutout.create": ShoutoutCreateEvent;
+    "channel.shoutout.receive": ShoutoutReceiveEvent;
 }
 
 type EventSubEvent<T extends SubscriptionType> = T extends keyof EventSubEventMap
