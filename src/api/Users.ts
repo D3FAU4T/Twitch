@@ -53,4 +53,29 @@ const get = async (opts: Partial<getOpts>, creds: Creds): Promise<Result<User[]>
     };
 }
 
-export default { get };
+const put = async (description: string | null, creds: Creds): Promise<Result<User[]>> => {
+    
+    const res = await fetch(`${url}?description=${description ? encodeURIComponent(description) : ''}`, {
+        method: "PUT",
+        headers: {
+            "Client-Id": creds.clientId,
+            "Authorization": `Bearer ${creds.accessToken}`,
+            "Content-Type": "application/json"
+        },
+    });
+
+    if (!res.ok)
+        return {
+            is_success: false,
+            error: `Failed to update user information: ${res.status} ${res.statusText}`
+        }
+
+    const data = await res.json() as { data: User[] };
+
+    return {
+        is_success: true,
+        data: data.data
+    };
+}
+
+export default { get, put };
