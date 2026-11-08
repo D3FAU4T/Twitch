@@ -10,6 +10,7 @@ export default class EventSub {
     private tempFn: CallableFunction | null = null;
 
     private sessionId: string | null = null;
+    private onSessionWelcome: ((sessionId: string) => Promise<void> | void) | null = null;
     private messageHandler: Map<Subscription['type'], (notification: EventSubNotification) => void> = new Map();
 
     constructor() { }
@@ -18,12 +19,27 @@ export default class EventSub {
         return this.sessionId;
     }
 
+    public onSession(handler: (sessionId: string) => Promise<void> | void): void {
+        this.onSessionWelcome = handler;
+    }
+
     public isConnected(): boolean {
         return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
     }
 
     public connect(): Promise<string> {
+        this.isIntentionalClose = false;
         const url = this.reconnectURL ?? 'wss://eventsub.wss.twitch.tv/ws';
+        this.reconnectURL = null;
+
+        if (this.ws) {
+            const oldWs = this.ws;
+            oldWs.onmessage = null;
+            oldWs.onerror = null;
+            oldWs.onclose = null;
+            oldWs.close();
+            this.ws = null;
+        }
 
         return new Promise((resolve, reject) => {
             try {
@@ -35,7 +51,7 @@ export default class EventSub {
                 this.ws = new WebSocket(url);
 
                 this.ws.onmessage = (event) => {
-                    this.handleMessage(event.data);
+                    void this.handleMessage(event.data);
                 }
 
                 this.ws.onerror = (error) => {
@@ -54,7 +70,7 @@ export default class EventSub {
                     if (!this.isIntentionalClose && this.reconnectAttempts < 5) {
                         this.reconnectAttempts++;
                         console.log(`Attempting to reconnect (${this.reconnectAttempts}/5)...`);
-                        setTimeout(() => this.connect(), 5000 * this.reconnectAttempts);
+                        setTimeout(() => void this.connect(), 5000 * this.reconnectAttempts);
                     }
                 }
             }
@@ -66,7 +82,7 @@ export default class EventSub {
         });
     }
 
-    private handleMessage(message: string): void {
+    private async handleMessage(message: string): Promise<void> {
         const data: EventSubMessage = JSON.parse(message);
 
         switch (data.metadata.message_type) {
@@ -78,7 +94,19 @@ export default class EventSub {
                     const keepAliveTimeoutSeconds = data.payload.session.keepalive_timeout_seconds ?? 10;
                     this.resetKeepalive(keepAliveTimeoutSeconds);
 
-                    this.reconnectAttempts = 0;
+                    if (this.onSessionWelcome) {
+                        try {
+                            await this.onSessionWelcome(this.sessionId);
+                        } catch (err) {
+                            console.error('Failed to handle session_welcome callback:', err);
+                        }
+                    }
+
+                    setTimeout(() => {
+                        if (this.isConnected()) {
+                            this.reconnectAttempts = 0;
+                        }
+                    }, 15000);
 
                     if (this.tempFn) {
                         this.tempFn(this.sessionId);
@@ -96,7 +124,7 @@ export default class EventSub {
                 if (data.payload.session?.reconnect_url) {
                     console.log('🔄 Reconnecting to new session...');
                     this.reconnectURL = data.payload.session.reconnect_url;
-                    this.connect();
+                    void this.connect();
                 }
 
                 break;
@@ -137,13 +165,9 @@ export default class EventSub {
 
         this.keepaliveTimeout = setTimeout(() => {
             console.warn('⚠️ Keepalive timeout - connection may be stale');
-
-            this.close();
-
-            if (!this.isIntentionalClose) {
-                this.connect();
+            if (this.ws) {
+                this.ws.close();
             }
-
         }, timeoutMs);
     }
 
@@ -156,6 +180,7 @@ export default class EventSub {
         }
 
         if (this.ws) {
+            this.ws.onclose = null;
             this.ws.close();
             this.ws = null;
         }

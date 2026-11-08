@@ -34,7 +34,7 @@ type ExistingSubscription = EventSubSubscriptionType;
 
 export interface ClientOptions {
     clientId: string;
-    accessToken: string;
+    accessToken: string | (() => string | undefined);
     userId: string;
     broadcasterUserId: string;
     shardCount?: number;
@@ -53,12 +53,34 @@ export default class Client {
         this.options = options;
     }
 
+    public setAccessToken(accessToken: string): void {
+        this.options.accessToken = accessToken;
+    }
+
     public async connect(): Promise<void> {
         if (this.isInitialized)
             return;
 
         const conduitId = await this.ensureConduit();
         this.conduitId = conduitId;
+
+        this.eventSub.onSession(async (sessionId) => {
+            if (this.conduitId) {
+                let attempts = 0;
+                while (attempts < 3) {
+                    try {
+                        console.log(`🔗 Updating Conduit shard 0 with session: ${sessionId}`);
+                        await this.ensureShard(this.conduitId, sessionId);
+                        console.log(`✅ Conduit shard 0 successfully bound to session: ${sessionId}`);
+                        break;
+                    } catch (error) {
+                        attempts++;
+                        console.error(`❌ Failed to update conduit shard for session ${sessionId} (attempt ${attempts}/3):`, error);
+                        if (attempts < 3) await new Promise((r) => setTimeout(r, 1000));
+                    }
+                }
+            }
+        });
 
         const sessionId = await this.eventSub.connect();
         await this.ensureShard(conduitId, sessionId);
@@ -264,9 +286,13 @@ export default class Client {
     }
 
     private get creds(): Creds {
+        const token = typeof this.options.accessToken === "function"
+            ? this.options.accessToken()
+            : this.options.accessToken;
+
         return {
             clientId: this.options.clientId,
-            accessToken: this.options.accessToken,
+            accessToken: token ?? "",
         };
     }
 
