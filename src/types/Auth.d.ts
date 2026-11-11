@@ -10,10 +10,7 @@ export interface clientCredentialGrantFlowError {
     message: string;
 }
 
-export interface AuthorizationCodeGrantFlow {
-  access_token: string;
-  expires_in: number;
-  refresh_token: string;
-  scope: string[];
-  token_type: "bearer"
+export interface AuthorizationCodeGrantFlow extends ClientCredentialsGrantFlow {
+    refresh_token: string;
+    scope: string[];
 }

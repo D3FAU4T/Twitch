@@ -1,4 +1,4 @@
-import type { Creds, Result } from "../types/Generic";
+import type { Creds, HelixUser, Result } from "../types/Generic";
 
 const url = "https://api.twitch.tv/helix/videos";
 
@@ -24,18 +24,15 @@ type getOptsId = {
     id: string;
 }
 
-interface VideoBase {
+interface VideoBase extends HelixUser {
     id: string;
-    user_id: string;
-    user_login: string;
-    user_name: string;
     title: string;
     description: string;
     created_at: string;
     published_at: string;
     url: string;
     thumbnail_url: string;
-    viewable: "public",
+    viewable: "public";
     view_count: number;
     language: string;
     type: "upload" | "archive" | "highlight";

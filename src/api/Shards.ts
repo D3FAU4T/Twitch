@@ -1,25 +1,28 @@
-import type { Creds, Result } from "../types/Generic";
+import type { Creds, PaginationOpts, Result } from "../types/Generic";
 import type { ShardResponse, ShardUpdateResponse } from "../types/Shards";
 
 const url = "https://api.twitch.tv/helix/eventsub/conduits/shards";
 
-type getParams = Creds & {
+type getParams = Creds & Pick<PaginationOpts, "after"> & {
     conduit_id: string;
     status?: string;
-    after?: string;
-}
+};
 
 type updateParams = Creds & {
     conduit_id: string;
-    shards: Pick<ShardResponse['data'][number], "id" | "transport">[]
-}
+    shards: Pick<ShardResponse["data"][number], "id" | "transport">[];
+};
 
 const get = async (options: getParams): Promise<Result<ShardResponse>> => {
     try {
-        const response = await fetch(`${url}?conduit_id=${options.conduit_id}`, {
+        const params = new URLSearchParams({ conduit_id: options.conduit_id });
+        if (options.status) params.append("status", options.status);
+        if (options.after) params.append("after", options.after);
+
+        const response = await fetch(`${url}?${params.toString()}`, {
             headers: {
-                'Client-Id': options.clientId,
-                'Authorization': `Bearer ${options.accessToken}`
+                "Client-Id": options.clientId,
+                "Authorization": `Bearer ${options.accessToken}`
             }
         });
 
@@ -31,21 +34,19 @@ const get = async (options: getParams): Promise<Result<ShardResponse>> => {
 
         const data = await response.json() as ShardResponse;
         return { is_success: true, data };
-    }
-    
-    catch (e: unknown) {
+    } catch (e: unknown) {
         return { is_success: false, error: e instanceof Error ? e.message : String(e) };
     }
-}
+};
 
 const update = async (options: updateParams): Promise<Result<ShardUpdateResponse>> => {
     try {
         const response = await fetch(url, {
-            method: 'PATCH',
+            method: "PATCH",
             headers: {
-                'Client-Id': options.clientId,
-                'Authorization': `Bearer ${options.accessToken}`,
-                'Content-Type': 'application/json'
+                "Client-Id": options.clientId,
+                "Authorization": `Bearer ${options.accessToken}`,
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({
                 conduit_id: options.conduit_id,
@@ -61,14 +62,12 @@ const update = async (options: updateParams): Promise<Result<ShardUpdateResponse
 
         const data = await response.json() as ShardUpdateResponse;
         return { is_success: true, data };
-    }
-    
-    catch (e: unknown) {
+    } catch (e: unknown) {
         return { is_success: false, error: e instanceof Error ? e.message : String(e) };
     }
-}
+};
 
 export default {
     get,
     update
-}
+};

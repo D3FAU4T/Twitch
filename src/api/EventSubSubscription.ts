@@ -1,17 +1,23 @@
 import type { EventSubSubscriptionResponse } from "../types/EventSub";
-import type { Creds, Result } from "../types/Generic";
+import type { Creds, PaginationOpts, Result } from "../types/Generic";
 import type { Subscription } from "../types/Subscriptions";
 
 const url = "https://api.twitch.tv/helix/eventsub/subscriptions";
 
+type GetOpts = Pick<PaginationOpts, "after"> & {
+    status?: string;
+    type?: string;
+    user_id?: string;
+};
+
 const create = async (options: Creds, data: Subscription): Promise<Result<EventSubSubscriptionResponse>> => {
     try {
         const response = await fetch(url, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Client-Id': options.clientId,
-                'Authorization': `Bearer ${options.accessToken}`,
-                'Content-Type': 'application/json'
+                "Client-Id": options.clientId,
+                "Authorization": `Bearer ${options.accessToken}`,
+                "Content-Type": "application/json"
             },
             body: JSON.stringify(data)
         });
@@ -24,20 +30,18 @@ const create = async (options: Creds, data: Subscription): Promise<Result<EventS
 
         const resData = await response.json() as EventSubSubscriptionResponse;
         return { is_success: true, data: resData };
-    }
-    
-    catch (e: unknown) {
+    } catch (e: unknown) {
         return { is_success: false, error: e instanceof Error ? e.message : String(e) };
     }
-}
+};
 
 const del = async (options: Creds, subscriptionId: string): Promise<Result<void>> => {
     try {
-        const response = await fetch(url + `?id=${subscriptionId}`, {
-            method: 'DELETE',
+        const response = await fetch(`${url}?id=${subscriptionId}`, {
+            method: "DELETE",
             headers: {
-                'Client-Id': options.clientId,
-                'Authorization': `Bearer ${options.accessToken}`
+                "Client-Id": options.clientId,
+                "Authorization": `Bearer ${options.accessToken}`
             }
         });
 
@@ -48,19 +52,24 @@ const del = async (options: Creds, subscriptionId: string): Promise<Result<void>
             };
 
         return { is_success: true, data: undefined };
-    }
-    
-    catch (e: unknown) {
+    } catch (e: unknown) {
         return { is_success: false, error: e instanceof Error ? e.message : String(e) };
     }
-}
+};
 
-const get = async (options: Creds): Promise<Result<EventSubSubscriptionResponse & { pagination: { cursor?: string } }>> => {
+const get = async (options: Creds, opts?: GetOpts): Promise<Result<EventSubSubscriptionResponse & { pagination: { cursor?: string } }>> => {
     try {
-        const response = await fetch(url, {
+        const params = new URLSearchParams();
+        if (opts?.status) params.append("status", opts.status);
+        if (opts?.type) params.append("type", opts.type);
+        if (opts?.user_id) params.append("user_id", opts.user_id);
+        if (opts?.after) params.append("after", opts.after);
+
+        const requestUrl = params.size > 0 ? `${url}?${params.toString()}` : url;
+        const response = await fetch(requestUrl, {
             headers: {
-                'Client-Id': options.clientId,
-                'Authorization': `Bearer ${options.accessToken}`
+                "Client-Id": options.clientId,
+                "Authorization": `Bearer ${options.accessToken}`
             }
         });
 
@@ -72,15 +81,13 @@ const get = async (options: Creds): Promise<Result<EventSubSubscriptionResponse 
 
         const resData = await response.json() as EventSubSubscriptionResponse & { pagination: { cursor?: string } };
         return { is_success: true, data: resData };
-    }
-    
-    catch (e: unknown) {
+    } catch (e: unknown) {
         return { is_success: false, error: e instanceof Error ? e.message : String(e) };
     }
-}
+};
 
 export default {
     get,
     create,
     del
-}
+};

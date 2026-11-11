@@ -1,4 +1,4 @@
-import type { Creds, Result } from "../types/Generic";
+import type { Creds, PaginationOpts, Result } from "../types/Generic";
 
 const url = "https://api.twitch.tv/helix/games";
 
@@ -69,11 +69,7 @@ const get = async (options: getOpts, creds: Creds): Promise<Result<Game[]>> => {
     }
 }
 
-type getTopOpts = {
-    first?: number;
-    after?: string;
-    before?: string;
-}
+type getTopOpts = PaginationOpts;
 
 const getTop = async (options: getTopOpts, creds: Creds): Promise<Result<{ data: Game[]; pagination: { cursor: string } }>> => {
     try {
